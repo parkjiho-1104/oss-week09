@@ -12,6 +12,7 @@
 
 // 주어짐: 도시 세 곳의 위도·경도. 키는 index.html <select> 의 option value 와 같습니다.
 import { getForecast } from "./api.js";
+import { toDays } from "./logic.js";
 
 const CITIES = {
   seoul: { name: "Seoul", lat: 37.566, lon: 126.9784 },
@@ -26,8 +27,36 @@ const citySelect = document.getElementById("city");
 const rainInput = document.getElementById("rain-limit");
 const windInput = document.getElementById("wind-limit");
 const statusEl = document.getElementById("status");
-const SummaryEl = document.getElementById("summary");
+const summaryEl = document.getElementById("summary");
 const rowsEl = document.getElementById("rows");
+
+const state = {
+  city: null,
+  days: [],
+};
+
+function dayRow(day) { 
+  const tr = document.createElement("tr");
+
+  const values = [
+    day.date.slice(5),
+    `${day.max}°`,
+    `${day.wind} km/h`,
+    `${day.rain}%`,
+  ];
+
+  for(const value of values) {
+    const td = document.createElement("td");
+    td.textContent = value;
+    tr.append(td);
+  }
+
+  return tr;
+}
+
+function render() {
+  rowsEl.replaceChildren(...state.days.map(dayRow));
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -40,11 +69,14 @@ form.addEventListener("submit", async (event) => {
   try {
     const daily = await getForecast(city);
 
+    state.city = city;
+    state.days = toDays(daily);
     statusEl.textContent = "";
-    console.log(daily);
   } 
   catch (error) {
-    statusEl.textContent = `Could not load the forecast(${error.message}).`;
+    statusEl.textContent = `Could not load the forecast (${error.message}).`;
     statusEl.classList.add("error");
   }
+
+  render();
 });
